@@ -10,29 +10,36 @@ body {
   font-family: Arial, sans-serif;
   background:#f7f7f7;
   padding:20px;
-  max-width:700px;
+  max-width:720px;
   margin:auto;
 }
 h1 { text-align:center; }
 textarea, input {
   width:100%;
   padding:10px;
-  margin-top:10px;
+  margin-top:8px;
 }
 button {
-  margin-top:10px;
-  padding:10px;
-  width:100%;
+  padding:6px 10px;
+  margin:4px 2px;
 }
 .wish {
-  background:white;
+  background:#fff;
   padding:15px;
   margin-top:15px;
   border-radius:8px;
 }
-.reactions button {
-  width:auto;
-  margin-right:5px;
+.reactions button:disabled {
+  opacity:0.5;
+}
+.comment {
+  font-size:14px;
+  border-top:1px solid #eee;
+  padding:5px 0;
+}
+canvas {
+  border:1px dashed #ccc;
+  margin-top:10px;
 }
 .ad {
   margin:30px 0;
@@ -47,19 +54,25 @@ button {
 
 <h1>WishFlood</h1>
 <p style="text-align:center">
-Make a wish. Let the internet answer with anything.
+Make a wish. Let the internet answer.
 </p>
 
 <textarea id="wishInput" placeholder="Write your wish..."></textarea>
 <button onclick="addWish()">Submit Wish</button>
 
-<div class="ad">
-  AD SPACE
-</div>
+<div class="ad">AD SPACE</div>
 
 <div id="wishList"></div>
 
 <script>
+const userId =
+  localStorage.getItem("userId") ||
+  (() => {
+    const id = Math.random().toString(36).slice(2);
+    localStorage.setItem("userId", id);
+    return id;
+  })();
+
 let wishes = JSON.parse(localStorage.getItem("wishes")) || [];
 
 function save() {
@@ -67,23 +80,55 @@ function save() {
 }
 
 function addWish() {
-  const text = document.getElementById("wishInput").value.trim();
+  const text = wishInput.value.trim();
   if (!text) return;
 
   wishes.unshift({
     text,
-    reactions: { like: 0, funny: 0, wow: 0 }
+    reactions: { like: [], funny: [], wow: [] },
+    comments: []
   });
 
-  document.getElementById("wishInput").value = "";
+  wishInput.value = "";
   save();
   render();
 }
 
-function react(index, type) {
-  wishes[index].reactions[type]++;
+function react(wi, type) {
+  const r = wishes[wi].reactions[type];
+  if (r.includes(userId)) return;
+  r.push(userId);
   save();
   render();
+}
+
+function addComment(wi, input) {
+  const t = input.value.trim();
+  if (!t) return;
+  wishes[wi].comments.push(t);
+  input.value = "";
+  save();
+  render();
+}
+
+function drawFakeLive(canvas) {
+  const ctx = canvas.getContext("2d");
+  let x = Math.random() * canvas.width;
+  let y = Math.random() * canvas.height;
+  ctx.strokeStyle = "#555";
+  ctx.lineWidth = 2;
+
+  let steps = 0;
+  const i = setInterval(() => {
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    x += Math.random()*20-10;
+    y += Math.random()*20-10;
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    steps++;
+    if (steps > 20) clearInterval(i);
+  }, 200);
 }
 
 function render() {
@@ -91,22 +136,47 @@ function render() {
   list.innerHTML = "";
 
   wishes.forEach((w, i) => {
-    const total =
-      w.reactions.like +
-      w.reactions.funny +
-      w.reactions.wow;
-
     const div = document.createElement("div");
     div.className = "wish";
+
     div.innerHTML = `
       <p>${w.text}</p>
+
       <div class="reactions">
-        <button onclick="react(${i}, 'like')">👍 ${w.reactions.like}</button>
-        <button onclick="react(${i}, 'funny')">😂 ${w.reactions.funny}</button>
-        <button onclick="react(${i}, 'wow')">🤯 ${w.reactions.wow}</button>
-        <span> | Total: ${total}</span>
+        <button ${w.reactions.like.includes(userId)?"disabled":""}
+          onclick="react(${i},'like')">
+          👍 ${w.reactions.like.length}
+        </button>
+        <button ${w.reactions.funny.includes(userId)?"disabled":""}
+          onclick="react(${i},'funny')">
+          😂 ${w.reactions.funny.length}
+        </button>
+        <button ${w.reactions.wow.includes(userId)?"disabled":""}
+          onclick="react(${i},'wow')">
+          🤯 ${w.reactions.wow.length}
+        </button>
+      </div>
+
+      <small>Someone is responding with a drawing…</small>
+      <canvas width="300" height="120"></canvas>
+
+      <div>
+        <input placeholder="Write a comment">
+        <button>Comment</button>
+      </div>
+
+      <div>
+        ${w.comments.map(c=>`<div class="comment">${c}</div>`).join("")}
       </div>
     `;
+
+    const canvas = div.querySelector("canvas");
+    drawFakeLive(canvas);
+
+    const btn = div.querySelector("div button:last-child");
+    const inp = div.querySelector("input");
+    btn.onclick = () => addComment(i, inp);
+
     list.appendChild(div);
   });
 }
@@ -116,4 +186,3 @@ render();
 
 </body>
 </html>
-
