@@ -1,17 +1,119 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>WishFlood</title>
+<meta charset="utf-8">
+<title>WishFlood</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background:#f7f7f7;
+  padding:20px;
+  max-width:700px;
+  margin:auto;
+}
+h1 { text-align:center; }
+textarea, input {
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+}
+button {
+  margin-top:10px;
+  padding:10px;
+  width:100%;
+}
+.wish {
+  background:white;
+  padding:15px;
+  margin-top:15px;
+  border-radius:8px;
+}
+.reactions button {
+  width:auto;
+  margin-right:5px;
+}
+.ad {
+  margin:30px 0;
+  padding:20px;
+  background:#eee;
+  text-align:center;
+}
+</style>
 </head>
+
 <body>
-  <h1>WishFlood</h1>
-  <p>Make a wish. Let the internet answer.</p>
 
-  <textarea placeholder="Write your wish"></textarea><br><br>
-  <button>Submit Wish</button>
+<h1>WishFlood</h1>
+<p style="text-align:center">
+Make a wish. Let the internet answer with anything.
+</p>
 
-  <hr>
-  <p>Responses will appear here.</p>
+<textarea id="wishInput" placeholder="Write your wish..."></textarea>
+<button onclick="addWish()">Submit Wish</button>
+
+<div class="ad">
+  AD SPACE
+</div>
+
+<div id="wishList"></div>
+
+<script>
+let wishes = JSON.parse(localStorage.getItem("wishes")) || [];
+
+function save() {
+  localStorage.setItem("wishes", JSON.stringify(wishes));
+}
+
+function addWish() {
+  const text = document.getElementById("wishInput").value.trim();
+  if (!text) return;
+
+  wishes.unshift({
+    text,
+    reactions: { like: 0, funny: 0, wow: 0 }
+  });
+
+  document.getElementById("wishInput").value = "";
+  save();
+  render();
+}
+
+function react(index, type) {
+  wishes[index].reactions[type]++;
+  save();
+  render();
+}
+
+function render() {
+  const list = document.getElementById("wishList");
+  list.innerHTML = "";
+
+  wishes.forEach((w, i) => {
+    const total =
+      w.reactions.like +
+      w.reactions.funny +
+      w.reactions.wow;
+
+    const div = document.createElement("div");
+    div.className = "wish";
+    div.innerHTML = `
+      <p>${w.text}</p>
+      <div class="reactions">
+        <button onclick="react(${i}, 'like')">👍 ${w.reactions.like}</button>
+        <button onclick="react(${i}, 'funny')">😂 ${w.reactions.funny}</button>
+        <button onclick="react(${i}, 'wow')">🤯 ${w.reactions.wow}</button>
+        <span> | Total: ${total}</span>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+render();
+</script>
+
 </body>
 </html>
+
