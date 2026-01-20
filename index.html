@@ -1,191 +1,195 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <title>WishFlood</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 body {
   font-family: Arial, sans-serif;
-  background: linear-gradient(135deg, #c8f7e5, #eafff8);
-  padding:20px;
-  max-width:760px;
-  margin:auto;
+  background: linear-gradient(135deg, #a8edea, #fed6e3);
+  margin: 0;
+  padding: 0;
 }
 
-h1 {
-  text-align:center;
-  color:#0f766e;
+header {
+  background: #2dd4bf;
+  color: white;
+  padding: 20px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: bold;
 }
 
-.subtitle {
-  text-align:center;
-  color:#065f46;
-  margin-bottom:20px;
+.container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 10px;
 }
 
-textarea, input {
-  width:100%;
-  padding:12px;
-  margin-top:8px;
-  border-radius:8px;
-  border:1px solid #99f6e4;
-  font-size:14px;
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+input, textarea {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
 }
 
 button {
-  background:#2dd4bf;
-  color:#064e3b;
-  border:none;
-  border-radius:8px;
-  padding:8px 12px;
-  margin-top:8px;
-  cursor:pointer;
-  font-weight:bold;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #2dd4bf;
+  color: white;
+  cursor: pointer;
 }
 
 button:hover {
-  background:#5eead4;
+  background: #14b8a6;
 }
 
-.wish {
-  background:white;
-  padding:15px;
-  margin-top:20px;
-  border-radius:14px;
-  box-shadow:0 10px 20px rgba(0,0,0,0.08);
-}
-
-.reactions button {
-  background:#ecfeff;
-  border:1px solid #99f6e4;
-  color:#065f46;
-  margin-right:5px;
-}
-
-.reactions button:disabled {
-  opacity:0.5;
-  cursor:not-allowed;
+.reaction {
+  cursor: pointer;
+  color: #14b8a6;
+  font-weight: bold;
 }
 
 .comment {
-  background:#f0fdfa;
-  padding:6px 10px;
-  border-radius:6px;
-  margin-top:4px;
-  font-size:14px;
+  margin-top: 5px;
+  padding-left: 10px;
+  font-size: 14px;
 }
 
-.ad {
-  margin:30px 0;
-  padding:20px;
-  background:#ecfeff;
-  border:2px dashed #2dd4bf;
-  text-align:center;
-  border-radius:12px;
-  color:#065f46;
+.answer img, .answer video {
+  max-width: 100%;
+  border-radius: 8px;
+  margin-top: 5px;
 }
 </style>
 </head>
 
 <body>
 
-<h1>WishFlood</h1>
-<p class="subtitle">
-Make a wish. Let people react and respond.
-</p>
+<header>WishFlood</header>
 
-<textarea id="wishInput" placeholder="Write your wish..."></textarea>
-<button onclick="addWish()">Submit Wish</button>
+<div class="container">
 
-<div class="ad">AD SPACE</div>
+  <div class="card">
+    <h3>소원 적기</h3>
+    <textarea id="wishInput" placeholder="예: 귀여운 고양이 그림 보고싶다"></textarea>
+    <button onclick="addWish()">소원 등록</button>
+  </div>
 
-<div id="wishList"></div>
+  <div id="wishList"></div>
+
+</div>
 
 <script>
-const userId =
-  localStorage.getItem("userId") ||
-  (() => {
-    const id = Math.random().toString(36).slice(2);
-    localStorage.setItem("userId", id);
-    return id;
-  })();
-
-let wishes = JSON.parse(localStorage.getItem("wishes")) || [];
-
-function save() {
-  localStorage.setItem("wishes", JSON.stringify(wishes));
+/* ===== 닉네임 (가짜 로그인) ===== */
+let nickname = localStorage.getItem("nickname");
+if (!nickname) {
+  nickname = prompt("닉네임 입력");
+  if (!nickname) nickname = "Anonymous";
+  localStorage.setItem("nickname", nickname);
 }
 
+/* ===== 데이터 ===== */
+let wishes = JSON.parse(localStorage.getItem("wishes") || "[]");
+let reactions = JSON.parse(localStorage.getItem("reactions") || "{}");
+
+/* ===== 소원 추가 ===== */
 function addWish() {
-  const text = wishInput.value.trim();
+  const text = document.getElementById("wishInput").value.trim();
   if (!text) return;
 
   wishes.unshift({
     text,
-    reactions: { like: [], funny: [], wow: [] },
-    comments: []
+    answers: [],
+    comments: [],
+    likes: 0
   });
 
-  wishInput.value = "";
   save();
-  render();
+  document.getElementById("wishInput").value = "";
 }
 
-function react(wi, type) {
-  const r = wishes[wi].reactions[type];
-  if (r.includes(userId)) return;
-  r.push(userId);
+/* ===== 응답 추가 ===== */
+function addAnswer(i) {
+  const link = document.getElementById("answer-"+i).value.trim();
+  if (!link) return;
+
+  wishes[i].answers.push(link);
   save();
-  render();
 }
 
-function addComment(wi, input) {
-  const t = input.value.trim();
-  if (!t) return;
-  wishes[wi].comments.push(t);
-  input.value = "";
+/* ===== 댓글 추가 ===== */
+function addComment(i) {
+  const input = document.getElementById("comment-"+i);
+  const text = input.value.trim();
+  if (!text) return;
+
+  wishes[i].comments.push({ name: nickname, text });
   save();
-  render();
 }
 
+/* ===== 반응 (1인 1회) ===== */
+function likeWish(i) {
+  const key = nickname + "-" + i;
+  if (reactions[key]) return alert("이미 반응함");
+
+  reactions[key] = true;
+  wishes[i].likes++;
+  save();
+}
+
+/* ===== 렌더 ===== */
 function render() {
   const list = document.getElementById("wishList");
   list.innerHTML = "";
 
-  wishes.forEach((w, i) => {
-    const div = document.createElement("div");
-    div.className = "wish";
+  wishes.sort((a,b)=>b.likes-a.likes);
 
-    div.innerHTML = `
-      <p>${w.text}</p>
+  wishes.forEach((w,i)=>{
+    list.innerHTML += `
+    <div class="card">
+      <h3>🙏 ${w.text}</h3>
 
-      <div class="reactions">
-        <button ${w.reactions.like.includes(userId)?"disabled":""}
-          onclick="react(${i},'like')">👍 ${w.reactions.like.length}</button>
-        <button ${w.reactions.funny.includes(userId)?"disabled":""}
-          onclick="react(${i},'funny')">😂 ${w.reactions.funny.length}</button>
-        <button ${w.reactions.wow.includes(userId)?"disabled":""}
-          onclick="react(${i},'wow')">🤯 ${w.reactions.wow.length}</button>
+      <div class="reaction" onclick="likeWish(${i})">👍 ${w.likes}</div>
+
+      <div class="answer">
+        ${w.answers.map(a=>{
+          if (a.match(/\.(jpg|png|gif)$/)) return `<img src="${a}">`;
+          if (a.match(/\.(mp4|webm)$/)) return `<video controls src="${a}"></video>`;
+          return `<a href="${a}" target="_blank">${a}</a>`;
+        }).join("")}
       </div>
 
-      <div style="margin-top:10px;">
-        <input placeholder="Write a comment">
-        <button class="commentBtn">Send</button>
-      </div>
+      <input id="answer-${i}" placeholder="그림/영상/밈 링크">
+      <button onclick="addAnswer(${i})">소원 들어주기</button>
 
-      <div class="comments">
-        ${w.comments.map(c=>`<div class="comment">${c}</div>`).join("")}
-      </div>
-    `;
+      <hr>
 
-    const input = div.querySelector("input");
-    const btn = div.querySelector(".commentBtn");
-    btn.onclick = () => addComment(i, input);
-
-    list.appendChild(div);
+      ${w.comments.map(c=>`<div class="comment"><b>${c.name}</b>: ${c.text}</div>`).join("")}
+      <input id="comment-${i}" placeholder="댓글">
+      <button onclick="addComment(${i})">댓글</button>
+    </div>`;
   });
+}
+
+/* ===== 저장 ===== */
+function save() {
+  localStorage.setItem("wishes", JSON.stringify(wishes));
+  localStorage.setItem("reactions", JSON.stringify(reactions));
+  render();
 }
 
 render();
@@ -193,4 +197,3 @@ render();
 
 </body>
 </html>
-
