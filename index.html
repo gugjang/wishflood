@@ -8,44 +8,83 @@
 <style>
 body {
   font-family: Arial, sans-serif;
-  background:#f7f7f7;
+  background: linear-gradient(135deg, #c8f7e5, #eafff8);
   padding:20px;
-  max-width:720px;
+  max-width:760px;
   margin:auto;
 }
-h1 { text-align:center; }
+
+h1 {
+  text-align:center;
+  color:#0f766e;
+}
+
+.subtitle {
+  text-align:center;
+  color:#065f46;
+  margin-bottom:20px;
+}
+
 textarea, input {
   width:100%;
-  padding:10px;
+  padding:12px;
   margin-top:8px;
-}
-button {
-  padding:6px 10px;
-  margin:4px 2px;
-}
-.wish {
-  background:#fff;
-  padding:15px;
-  margin-top:15px;
   border-radius:8px;
+  border:1px solid #99f6e4;
+  font-size:14px;
 }
+
+button {
+  background:#2dd4bf;
+  color:#064e3b;
+  border:none;
+  border-radius:8px;
+  padding:8px 12px;
+  margin-top:8px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+button:hover {
+  background:#5eead4;
+}
+
+.wish {
+  background:white;
+  padding:15px;
+  margin-top:20px;
+  border-radius:14px;
+  box-shadow:0 10px 20px rgba(0,0,0,0.08);
+}
+
+.reactions button {
+  background:#ecfeff;
+  border:1px solid #99f6e4;
+  color:#065f46;
+  margin-right:5px;
+}
+
 .reactions button:disabled {
   opacity:0.5;
+  cursor:not-allowed;
 }
+
 .comment {
+  background:#f0fdfa;
+  padding:6px 10px;
+  border-radius:6px;
+  margin-top:4px;
   font-size:14px;
-  border-top:1px solid #eee;
-  padding:5px 0;
 }
-canvas {
-  border:1px dashed #ccc;
-  margin-top:10px;
-}
+
 .ad {
   margin:30px 0;
   padding:20px;
-  background:#eee;
+  background:#ecfeff;
+  border:2px dashed #2dd4bf;
   text-align:center;
+  border-radius:12px;
+  color:#065f46;
 }
 </style>
 </head>
@@ -53,8 +92,8 @@ canvas {
 <body>
 
 <h1>WishFlood</h1>
-<p style="text-align:center">
-Make a wish. Let the internet answer.
+<p class="subtitle">
+Make a wish. Let people react and respond.
 </p>
 
 <textarea id="wishInput" placeholder="Write your wish..."></textarea>
@@ -111,26 +150,6 @@ function addComment(wi, input) {
   render();
 }
 
-function drawFakeLive(canvas) {
-  const ctx = canvas.getContext("2d");
-  let x = Math.random() * canvas.width;
-  let y = Math.random() * canvas.height;
-  ctx.strokeStyle = "#555";
-  ctx.lineWidth = 2;
-
-  let steps = 0;
-  const i = setInterval(() => {
-    ctx.beginPath();
-    ctx.moveTo(x, y);
-    x += Math.random()*20-10;
-    y += Math.random()*20-10;
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    steps++;
-    if (steps > 20) clearInterval(i);
-  }, 200);
-}
-
 function render() {
   const list = document.getElementById("wishList");
   list.innerHTML = "";
@@ -144,38 +163,26 @@ function render() {
 
       <div class="reactions">
         <button ${w.reactions.like.includes(userId)?"disabled":""}
-          onclick="react(${i},'like')">
-          👍 ${w.reactions.like.length}
-        </button>
+          onclick="react(${i},'like')">👍 ${w.reactions.like.length}</button>
         <button ${w.reactions.funny.includes(userId)?"disabled":""}
-          onclick="react(${i},'funny')">
-          😂 ${w.reactions.funny.length}
-        </button>
+          onclick="react(${i},'funny')">😂 ${w.reactions.funny.length}</button>
         <button ${w.reactions.wow.includes(userId)?"disabled":""}
-          onclick="react(${i},'wow')">
-          🤯 ${w.reactions.wow.length}
-        </button>
+          onclick="react(${i},'wow')">🤯 ${w.reactions.wow.length}</button>
       </div>
 
-      <small>Someone is responding with a drawing…</small>
-      <canvas width="300" height="120"></canvas>
-
-      <div>
+      <div style="margin-top:10px;">
         <input placeholder="Write a comment">
-        <button>Comment</button>
+        <button class="commentBtn">Send</button>
       </div>
 
-      <div>
+      <div class="comments">
         ${w.comments.map(c=>`<div class="comment">${c}</div>`).join("")}
       </div>
     `;
 
-    const canvas = div.querySelector("canvas");
-    drawFakeLive(canvas);
-
-    const btn = div.querySelector("div button:last-child");
-    const inp = div.querySelector("input");
-    btn.onclick = () => addComment(i, inp);
+    const input = div.querySelector("input");
+    const btn = div.querySelector(".commentBtn");
+    btn.onclick = () => addComment(i, input);
 
     list.appendChild(div);
   });
@@ -186,3 +193,4 @@ render();
 
 </body>
 </html>
+
